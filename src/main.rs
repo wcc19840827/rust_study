@@ -15,9 +15,94 @@ fn main() {
         test_6();
         test_7();
         test_thread();
+        test_thread1();
     }
 
-    test_thread1();
+    test_thread2();
+}
+
+fn test_thread2() {//generate_tree_r_last
+    println!("start");
+
+    let _bus_num = 4;
+    let mut gpu_busy_flag = Vec::new();
+    // TODO-Ryan:
+    // gpu_busy_flag.resize(_bus_num, Arc::new(RwLock::new(0)));
+    for _ in 0.._bus_num {
+        gpu_busy_flag.push( Arc::new(RwLock::new(0)) )
+    }
+
+    let config_count = 8;
+    rayon::scope(|s| {
+        for i in (0..config_count).step_by(_bus_num) {
+            for j in 0.._bus_num {
+
+                let i = i + j;
+                if i == config_count {
+                    break;
+                }
+
+                let (builder_tx, builder_rx) = mpsc::sync_channel(0);
+                // let (builder_tx, builder_rx) = mpsc::sync_channel::<(Vec<u16>, bool)>(0);
+
+                s.spawn(move |_| {
+
+                    println!("[tree_r_last] encoded");
+
+                    builder_tx
+                    .send((1, false))
+                    .expect("failed to send encoded");
+
+                    println!("[tree_r_last] builder_tx");
+                });
+
+                // let mut gpu_busy_flag = gpu_busy_flag.clone();
+                let gpu_busy_flag = gpu_busy_flag.clone();
+                s.spawn(move |_| {
+                    println!("[tree_r_last] 1");
+                    let (encoded, is_final) =
+                                    builder_rx.recv().expect("failed to recv encoded data");
+                    
+                    println!("[tree_r_last] 2");
+                    // find_idle_gpu
+                    println!("[tree_c] begin to find idle gpu i={}, j={}", i, j);
+                    let mut find_idle_gpu: i32 = -1;
+                    loop {
+                        for i in 0.._bus_num {
+                            if *gpu_busy_flag[i].read().unwrap() == 0 {
+                                *gpu_busy_flag[i].write().unwrap() = 1;
+                                find_idle_gpu = i as i32;
+
+                                println!("[tree_c] find_idle_gpu={} i={}, j={}", find_idle_gpu, i, j);// TODO-Ryan:
+                                break;
+                            }
+                        }
+
+                        if find_idle_gpu == -1 {
+                            thread::sleep(Duration::from_millis(1));
+                        }else{
+                            break;
+                        }
+                    }
+
+                    assert!(find_idle_gpu>=0);
+                    let find_idle_gpu: usize = find_idle_gpu as usize;
+                    println!("[tree_c] Use multi GPUs, total_gpu={}, i={}, use_gpu_index={}", _bus_num, i, find_idle_gpu);
+
+                    // let factor = rand::thread_rng().gen_range(1, 10); //默认使用 i32
+                    // thread::sleep(Duration::from_millis(factor*1000));
+
+                    *gpu_busy_flag[find_idle_gpu].write().unwrap() = 0; 
+                    println!("[tree_c] set gpu idle={} i={}, j={}", find_idle_gpu, i, j);// TODO-Ryan:
+
+                    // thread::sleep(Duration::from_millis(factor*1000));
+                });
+            }
+        }
+
+    }); // scope_end
+
+    println!("end");
 }
 
 fn test_thread1() {
