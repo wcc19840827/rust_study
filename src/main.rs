@@ -14,11 +14,39 @@ fn main() {
         test_5();
         test_6();
         test_7();
-        test_thread();
-        test_thread1();
+        test_thread();  //多线程 spawn
+        test_thread1(); //线程间同步与互斥,使用同步锁 Arc::new(RwLock::new(0)
+        test_thread2(); //generate_tree_r_last
     }
 
-    test_thread2();
+    test_thread3(); //线程间使用频道往主线程的vector写入数据  mpsc::sync_channel
+}
+
+fn test_thread3() {
+    println!("start");
+
+    let mut gpu_busy_flag = Vec::new();
+    let (faulty_tx, faulty_rx) = mpsc::sync_channel(20);
+
+    rayon::scope(|s| {
+        for i in 0..20 {
+            let thread_faulty_tx = faulty_tx.clone();
+
+            s.spawn(move |_| {
+                thread_faulty_tx.send(i).unwrap();
+            });
+        }
+
+    }); // scope_end
+    drop(faulty_tx);
+
+    for received in faulty_rx.iter() {
+        // let received = faulty_rx.recv().unwrap();
+        println!("------wcc receive faulty {}", received);
+        gpu_busy_flag.push(received)
+    }
+
+    println!("end");
 }
 
 fn test_thread2() {//generate_tree_r_last
@@ -60,7 +88,7 @@ fn test_thread2() {//generate_tree_r_last
                 let gpu_busy_flag = gpu_busy_flag.clone();
                 s.spawn(move |_| {
                     println!("[tree_r_last] 1");
-                    let (encoded, is_final) =
+                    let (_encoded, _is_final) =
                                     builder_rx.recv().expect("failed to recv encoded data");
                     
                     println!("[tree_r_last] 2");
