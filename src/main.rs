@@ -1,20 +1,20 @@
-use sha256::{digest};
-
 fn main() {
-    // println!("Hello, world!");
+    println!("Hello, world!");
 
-    let base_str = "study blockchain!";
+    // let v1: Vec<i32> = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    let mut v1 = Vec::new();
 
-    let mut k = 0;
-    loop {
-        let s = format!("{}{}", base_str, k);
-
-        let hash_val = digest(s);
-        if hash_val.starts_with("0000") {
-            println!("{}{} => {}", base_str, k, hash_val);
-            break;
-        }
-
-        k += 1;
+    for k in 0..1000 {
+        v1.push(k)
     }
+
+    let v2: Vec<_> = v1.iter().map(|val|
+    {
+        println!("{}", val);
+    
+    }).collect();
+
+    // assert_eq!(v2, vec![2, 3, 4]);
 }
+
+
