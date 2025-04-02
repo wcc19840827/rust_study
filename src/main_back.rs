@@ -5,32 +5,30 @@ use std::io;
 fn main() {
     println!("Guess the number!");
 
-    //随机
-    let secret_number = rand::thread_rng().gen_range(1, 101);
+    let secret_number = rand::thread_rng().gen_range(1, 101); //默认使用 i32
 
     loop {
+        // println!("The secret number is: {}", secret_number);
+
         println!("Please input your guess.");
 
         let mut guess = String::new();
 
-        //从标准输入读入
         io::stdin()
             .read_line(&mut guess)
             .expect("Failed to read line");
 
-        //检查输入的是否是整数
+        // let guess: u32 = guess.trim().parse()
+        //     .expect("Please type a number!");
+
         let guess: u32 = match guess.trim().parse() {
             Ok(num) => num,
-            Err(_) => {
-                println!("Please input u32 number!!!");
-                continue
-            },
+            Err(_) => continue,
         };
 
         println!("You guessed: {}", guess);
 
-        //比较 guess 和 secret_number
-        match guess.cmp (&secret_number){
+        match guess.cmp(&secret_number) {
             Ordering::Less => println!("Too small!"),
             Ordering::Greater => println!("Too big!"),
             Ordering::Equal => {
@@ -38,6 +36,5 @@ fn main() {
                 break;
             }
         }
-
     }
 }
