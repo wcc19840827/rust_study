@@ -1,9 +1,7 @@
 [package]
-name = "pow"
+name = "tokio_task"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2024"
 
 [dependencies]
-sha256 = "1.1.1"
+tokio = { version = "1.44.1", features = ["rt-multi-thread", "macros", "time", "net", "io-util", "sync"] }
